@@ -1,8 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
+import { CourseService } from './services/course.service'; 
 
-export const prisma = new PrismaClient(); 
+export const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
+});
+
+const courseService = new CourseService(prisma);
+
 const app = express();
 
 app.use(cors());
@@ -11,51 +17,27 @@ app.use(express.json());
 // --- ROUTES ---
 app.get('/api/courses', async (req, res) => {
   try {
-    const userId = 1;
-    const courses = await prisma.course.findMany({
-      include: { modules: { include: { lessons: true } } },
-      orderBy: { id: 'asc' }
-    });
-    const userProgress = await prisma.progress.findMany({
-      where: { userId: userId, isCompleted: true },
-      select: { lessonId: true }
-    });
-    const completedLessonIds = userProgress.map(p => p.lessonId);
-
-    const formattedCourses = courses.map(course => {
-      const allLessons = course.modules.flatMap(m => m.lessons);
-      const totalLessons = allLessons.length;
-      const completedCount = allLessons.filter(lesson => 
-        completedLessonIds.includes(lesson.id)
-      ).length;
-      const percentage = totalLessons === 0 ? 0 : Math.round((completedCount / totalLessons) * 100);
-
-      return { ...course, completed: percentage, lessons: allLessons };
-    });
-
-    res.json(formattedCourses);
+    const userId = 1; 
+    const courses = await courseService.getAllCoursesWithProgress(userId);
+    res.json(courses);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Помилка сервера' });
   }
 });
 
 app.get('/api/courses/:id', async (req, res) => {
-  const { id } = req.params;
   try {
-    const course = await prisma.course.findUnique({
-      where: { id: Number(id) },
-      include: { modules: { include: { lessons: true } } }
-    });
+    const { id } = req.params;
+    const course = await courseService.getCourseById(Number(id));
 
-    if (!course) return res.status(404).json({ error: 'Курс не знайдено' });
+    if (!course) {
+      return res.status(404).json({ error: 'Курс не знайдено' });
+    }
 
-    const formattedCourse = {
-      ...course,
-      completed: 0,
-      lessons: course.modules.flatMap(m => m.lessons)
-    };
-    res.json(formattedCourse);
+    res.json(course);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Помилка сервера' });
   }
 });
@@ -77,12 +59,13 @@ app.post('/api/progress/toggle', async (req, res) => {
   try {
     const { lessonId } = req.body;
     const userId = 1; 
-    const existingProgress = await prisma.progress.findUnique({
+
+    const existing = await prisma.progress.findUnique({
       where: { userId_lessonId: { userId, lessonId } }
     });
 
-    if (existingProgress) {
-      await prisma.progress.delete({ where: { id: existingProgress.id } });
+    if (existing) {
+      await prisma.progress.delete({ where: { id: existing.id } });
       res.json({ completed: false });
     } else {
       await prisma.progress.create({ data: { userId, lessonId, isCompleted: true } });
