@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, Play, Circle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import type { Course, Lesson } from './data';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export function CoursePage() {
   const { id } = useParams();
-  
   const [course, setCourse] = useState<Course | null>(null);
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [completed, setCompleted] = useState<number[]>([]);
@@ -15,11 +15,11 @@ export function CoursePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const courseRes = await fetch(`http://localhost:3000/api/courses/${id}`);
+        const courseRes = await fetch(`${API_URL}/api/courses/${id}`);
         if (!courseRes.ok) throw new Error('Course not found');
         const courseData = await courseRes.json();
         
-        const progressRes = await fetch('http://localhost:3000/api/progress');
+        const progressRes = await fetch(`${API_URL}/api/progress`);
         const progressData = await progressRes.json();
 
         setCourse(courseData);

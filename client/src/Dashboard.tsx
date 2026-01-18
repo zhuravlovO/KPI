@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { BookOpen, PlayCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Course } from './data'; 
-
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 export function Dashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/courses')
+    fetch(`${API_URL}/api/courses`)
       .then((res) => res.json())
       .then((data) => {
         setCourses(data);
