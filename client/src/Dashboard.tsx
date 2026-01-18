@@ -1,8 +1,24 @@
+import { useEffect, useState } from 'react';
 import { BookOpen, PlayCircle } from 'lucide-react';
-import { COURSES } from './data';
 import { Link } from 'react-router-dom';
+import type { Course } from './data'; 
 
 export function Dashboard() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/api/courses')
+      .then((res) => res.json())
+      .then((data) => {
+        setCourses(data);
+        setLoading(false);
+      })
+      .catch((err) => console.error('Помилка завантаження:', err));
+  }, []);
+
+  if (loading) return <div className="p-10 text-center">Завантаження курсів з сервера...</div>;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
@@ -20,9 +36,9 @@ export function Dashboard() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Мої курси</h1>
+        <h1 className="text-2xl font-bold mb-6">Курси (з бази даних Neon)</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {COURSES.map((course) => (
+          {courses.map((course) => (
             <Link to={`/course/${course.id}`} key={course.id}>
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col">
                 <div className="h-40 overflow-hidden shrink-0">
@@ -35,16 +51,16 @@ export function Dashboard() {
                   <div className="mb-4">
                     <div className="flex justify-between text-xs text-gray-500 mb-1">
                       <span>Прогрес</span>
-                      <span>{course.completed}%</span>
+                      <span>{course.completed || 0}%</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${course.completed}%` }}></div>
+                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${course.completed || 0}%` }}></div>
                     </div>
                   </div>
 
                   <button className="w-full flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium py-2 rounded-lg transition-colors text-sm">
                     <PlayCircle size={16} />
-                    {course.completed === 0 ? 'Почати навчання' : 'Продовжити навчання'}
+                    Почати навчання
                   </button>
                 </div>
               </div>

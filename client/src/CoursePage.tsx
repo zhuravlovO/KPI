@@ -1,42 +1,81 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, Play, Circle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-
-const LESSONS = [
-  { id: 1, title: 'Вступ до курсу. Налаштування оточення', duration: '10:05', video: 'https://www.youtube.com/watch?v=SqcY0GlETPk' },
-  { id: 2, title: 'Компоненти та JSX. Як це працює?', duration: '15:30', video: 'https://www.youtube.com/watch?v=kYV90v4tKvo' },
-  { id: 3, title: 'Props та State. Передача даних', duration: '12:45', video: 'https://www.youtube.com/watch?v=9jMBz6G_8N4' },
-];
+import type { Course, Lesson } from './data';
 
 export function CoursePage() {
   const { id } = useParams();
-  const [activeLesson, setActiveLesson] = useState(LESSONS[0]);
-  const [completed, setCompleted] = useState<number[]>([1]);
+  
+  const [course, setCourse] = useState<Course | null>(null);
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  const [completed, setCompleted] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const toggleComplete = (lessonId: number) => {
-    if (completed.includes(lessonId)) {
+  // Завантаження даних
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const courseRes = await fetch(`http://localhost:3000/api/courses/${id}`);
+        if (!courseRes.ok) throw new Error('Course not found');
+        const courseData = await courseRes.json();
+        
+        const progressRes = await fetch('http://localhost:3000/api/progress');
+        const progressData = await progressRes.json();
+
+        setCourse(courseData);
+        setCompleted(progressData);
+
+        if (courseData.lessons && courseData.lessons.length > 0) {
+          setActiveLesson(courseData.lessons[0]);
+        }
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  const toggleComplete = async (lessonId: number) => {
+    const isAlreadyCompleted = completed.includes(lessonId);
+    if (isAlreadyCompleted) {
       setCompleted(completed.filter(id => id !== lessonId));
     } else {
       setCompleted([...completed, lessonId]);
     }
+    
+    try {
+      await fetch('http://localhost:3000/api/progress/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonId })
+      });
+    } catch (error) {
+      console.error("Failed to save progress", error);
+    }
   };
+
   const getEmbedUrl = (url: string) => {
     return url.replace('watch?v=', 'embed/');
   };
 
+  if (loading) return <div className="p-10 text-center">Завантаження...</div>;
+  if (!course || !activeLesson) return <div>Курс не знайдено</div>;
+
   return (
     <div className="flex flex-col h-screen bg-white">
-      {/* Верхня панель */}
       <header className="h-16 border-b flex items-center px-6 bg-white shrink-0 z-10">
         <Link to="/" className="text-gray-500 hover:text-gray-900 flex items-center gap-2 mr-6 transition-colors">
           <ArrowLeft size={20} />
           Назад до курсів
         </Link>
-        <h1 className="font-bold text-lg truncate">Курс #{id}: React для початківців</h1>
+        <h1 className="font-bold text-lg truncate">Курс: {course.title}</h1>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Ліва частина - Плеєр (звичайний HTML iframe) */}
+        {/* Плеєр */}
         <div className="flex-1 bg-black flex flex-col">
           <div className="flex-1 relative">
             <iframe 
@@ -52,7 +91,7 @@ export function CoursePage() {
           <div className="p-6 bg-white border-t h-32 shrink-0 flex justify-between items-center">
             <div>
               <h2 className="text-xl font-bold mb-1">{activeLesson.title}</h2>
-              <p className="text-gray-500 text-sm">Урок {activeLesson.id} з {LESSONS.length}</p>
+              <p className="text-gray-500 text-sm">Тривалість: {activeLesson.duration}</p>
             </div>
             <button 
               onClick={() => toggleComplete(activeLesson.id)}
@@ -71,13 +110,13 @@ export function CoursePage() {
           </div>
         </div>
 
-        {/* Права частина - Список уроків */}
+        {/* Список уроків */}
         <div className="w-96 border-l bg-gray-50 overflow-y-auto shrink-0">
           <div className="p-5 font-bold text-gray-700 border-b bg-white">
             Зміст курсу
           </div>
           <div>
-            {LESSONS.map((lesson) => (
+            {course.lessons.map((lesson) => (
               <div 
                 key={lesson.id}
                 onClick={() => setActiveLesson(lesson)}
