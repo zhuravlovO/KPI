@@ -3,24 +3,28 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log(' Починаю наповнення бази...');
+  console.log('  Очищення бази даних ');
 
-  await prisma.progress.deleteMany();
-  await prisma.lesson.deleteMany();
-  await prisma.module.deleteMany();
-  await prisma.course.deleteMany();
-  await prisma.user.deleteMany();
+  try {
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "Progress" RESTART IDENTITY CASCADE;`);
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "Lesson" RESTART IDENTITY CASCADE;`);
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "Module" RESTART IDENTITY CASCADE;`);
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "Course" RESTART IDENTITY CASCADE;`);
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User" RESTART IDENTITY CASCADE;`);
+  } catch (error) {
+    console.log('  Неможливо очистити таблиці ');
+  }
+
+  console.log(' Починаю наповнення бази...');
 
   await prisma.user.create({
     data: {
-      id: 1,
       email: 'student@test.com',
       role: 'STUDENT',
       fullName: 'Test Student'
     }
   });
 
-  // --- КУРС 1: React ---
   await prisma.course.create({
     data: {
       title: 'React: Сучасний Frontend',
@@ -41,7 +45,6 @@ async function main() {
     },
   });
 
-  // --- КУРС 2: Node.js ---
   await prisma.course.create({
     data: {
       title: 'Node.js Backend Developer',
@@ -61,7 +64,6 @@ async function main() {
     },
   });
 
-  // --- КУРС 3: TypeScript ---
   await prisma.course.create({
     data: {
       title: 'TypeScript Pro',
@@ -81,7 +83,6 @@ async function main() {
     },
   });
 
-  // --- КУРС 4: Docker & DevOps ---
   await prisma.course.create({
     data: {
       title: 'Docker та DevOps для початківців',
@@ -101,7 +102,6 @@ async function main() {
     },
   });
 
-  // --- КУРС 5: Python ---
   await prisma.course.create({
     data: {
       title: 'Python Data Science',
