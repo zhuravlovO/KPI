@@ -32,7 +32,7 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
       - name: Server - Install Dependencies
-        run: cd server && npm ci
+        run: cd server && npm install
 
       - name: Server - Static Analysis (Lint/Typecheck)
         run: cd server && npm run lint
@@ -48,7 +48,7 @@ jobs:
           DATABASE_URL: postgres://postgres:password@localhost:5432/test_db
 
       - name: Client - Install Dependencies
-        run: cd client && npm ci
+        run: cd client && npm install
 
       - name: Client - Lint
         run: cd client && npm run lint
