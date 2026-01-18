@@ -47,7 +47,7 @@ export function CoursePage() {
     }
     
     try {
-      await fetch('http://localhost:3000/api/progress/toggle', {
+      await fetch(`${API_URL}/api/progress/toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lessonId })

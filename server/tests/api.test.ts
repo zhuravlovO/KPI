@@ -12,10 +12,10 @@ describe('Integration Test: API Endpoints', () => {
   });
 
   test('GET /api/courses/1 should return React course', async () => {
-    const res = await request(app).get('/api/courses/1');
+    const res = await request(app).get('/api/courses/10');
 
     expect(res.status).toBe(200);
-    expect(res.body.title).toContain('React'); 
+    expect(res.body.title).toContain('TypeScript Pro'); 
   });
 
   test('GET /api/courses/999 should return 404', async () => {
