@@ -1,1 +1,1 @@
-echo "Husky check passed"
+npm test
